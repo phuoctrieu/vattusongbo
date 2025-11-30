@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # --- DATABASE CHUNG (PostgreSQL) ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: factory_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: root_user
+      POSTGRES_PASSWORD: root_password
+      POSTGRES_DB: factory_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root_user -d factory_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - factory-network
+
+  # --- BACKEND API (Node.js + Express) ---
+  backend:
+    build: ./backend
+    container_name: vattusongbo_backend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: factory_db
+      DB_USER: root_user
+      DB_PASSWORD: root_password
+      JWT_SECRET: change_this_secret_in_production_please
+      JWT_EXPIRES_IN: 24h
+      CORS_ORIGIN: http://localhost:8088
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - factory-network
+
+  # --- FRONTEND (React + Nginx) ---
+  frontend:
+    build: .
+    container_name: vattusongbo_frontend
+    restart: always
+    ports:
+      - "8088:80"
+    depends_on:
+      - backend
+    networks:
+      - factory-network
+
+volumes:
+  postgres_data:
+
+networks:
+  factory-network:
+    driver: bridge
+

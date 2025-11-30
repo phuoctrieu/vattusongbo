@@ -1,28 +1,8 @@
 version: '3.8'
 
 services:
-  # --- DATABASE (PostgreSQL) ---
-  postgres:
-    image: postgres:16-alpine
-    container_name: factory_postgres
-    restart: always
-    environment:
-      POSTGRES_USER: root_user
-      POSTGRES_PASSWORD: root_password
-      POSTGRES_DB: factory_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root_user -d factory_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - factory-network
-
   # --- BACKEND API (Node.js + Express) ---
+  # Kết nối với container postgres đã có sẵn: factory_postgres
   backend:
     build: ./backend
     container_name: vattusongbo_backend
@@ -32,7 +12,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DB_HOST: postgres
+      DB_HOST: factory_postgres
       DB_PORT: 5432
       DB_NAME: factory_db
       DB_USER: root_user
@@ -40,11 +20,7 @@ services:
       JWT_SECRET: change_this_secret_in_production_please
       JWT_EXPIRES_IN: 24h
       CORS_ORIGIN: http://localhost:8088
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - factory-network
+    network_mode: bridge
 
   # --- FRONTEND (React + Nginx) ---
   frontend:
@@ -55,12 +31,4 @@ services:
       - "8088:80"
     depends_on:
       - backend
-    networks:
-      - factory-network
-
-volumes:
-  postgres_data:
-
-networks:
-  factory-network:
-    driver: bridge
+    network_mode: bridge
