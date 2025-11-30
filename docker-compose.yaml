@@ -31,7 +31,7 @@ services:
       - "3001:3001"
     environment:
       NODE_ENV: production
-      PORT: 3001
+      PORT: 8090
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: factory_db
