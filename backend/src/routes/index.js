@@ -199,8 +199,30 @@ router.get('/materials', async (req, res) => {
 
 router.post('/materials', async (req, res) => {
   try {
-    const material = await Material.create(req.body);
-    await createLog('CREATE', `Tạo vật tư: ${material.name}`, 'system');
+    const { name, unit, type, warehouseId, supplierId, binLocation, minStock, note } = req.body;
+    
+    // Tự động tạo code nếu không được cung cấp
+    let code = req.body.code;
+    if (!code) {
+      // Tạo code dựa trên loại vật tư
+      const prefixMap = {
+        'CONSUMABLE': 'VT',
+        'ELECTRIC_TOOL': 'DC-D',
+        'MECHANICAL_TOOL': 'DC-CK',
+        'ELECTRIC_DEVICE': 'TB-D',
+        'MECHANICAL_DEVICE': 'TB-CK'
+      };
+      const prefix = prefixMap[type] || 'VT';
+      
+      // Đếm số vật tư cùng loại để tạo số thứ tự
+      const count = await Material.count({ where: { type } });
+      code = `${prefix}-${String(count + 1).padStart(4, '0')}`;
+    }
+    
+    const material = await Material.create({
+      code, name, unit, type, warehouseId, supplierId, binLocation, minStock, note, currentStock: 0
+    });
+    await createLog('CREATE', `Tạo vật tư: ${material.name} (${code})`, 'system');
     res.json(material);
   } catch (error) {
     res.status(500).json({ error: error.message });
