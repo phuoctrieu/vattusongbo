@@ -180,8 +180,18 @@ router.delete('/suppliers/:id', async (req, res) => {
 // ============= MATERIALS =============
 router.get('/materials', async (req, res) => {
   try {
-    const materials = await Material.findAll({ include: [{ model: Warehouse, as: 'warehouse' }] });
-    res.json(materials);
+    const materials = await Material.findAll({ 
+      include: [
+        { model: Warehouse, as: 'warehouse' },
+        { model: Supplier, as: 'supplier' }
+      ] 
+    });
+    // Thêm supplierName để frontend dễ hiển thị
+    const result = materials.map(m => ({
+      ...m.toJSON(),
+      supplierName: m.supplier?.name || null
+    }));
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -189,25 +199,8 @@ router.get('/materials', async (req, res) => {
 
 router.post('/materials', async (req, res) => {
   try {
-    const data = { ...req.body };
-    
-    // Tự động tạo mã vật tư nếu không có
-    if (!data.code) {
-      const prefix = {
-        'CONSUMABLE': 'VT',
-        'ELECTRIC_TOOL': 'DC-D',
-        'MECHANICAL_TOOL': 'DC-CK',
-        'ELECTRIC_DEVICE': 'TB-D',
-        'MECHANICAL_DEVICE': 'TB-CK'
-      }[data.type] || 'VT';
-      
-      // Đếm số vật tư cùng loại để tạo số thứ tự
-      const count = await Material.count({ where: { type: data.type } });
-      data.code = `${prefix}-${String(count + 1).padStart(4, '0')}`;
-    }
-    
-    const material = await Material.create(data);
-    await createLog('CREATE', `Tạo vật tư: ${material.name} (${material.code})`, 'system');
+    const material = await Material.create(req.body);
+    await createLog('CREATE', `Tạo vật tư: ${material.name}`, 'system');
     res.json(material);
   } catch (error) {
     res.status(500).json({ error: error.message });

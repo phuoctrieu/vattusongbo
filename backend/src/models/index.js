@@ -48,6 +48,7 @@ const Material = sequelize.define('Material', {
   unit: { type: DataTypes.STRING(20) },
   type: { type: DataTypes.STRING(30) }, // CONSUMABLE, ELECTRIC_TOOL, etc.
   warehouseId: { type: DataTypes.INTEGER, field: 'warehouse_id' },
+  supplierId: { type: DataTypes.INTEGER, field: 'supplier_id' }, // Nhà cung cấp mặc định
   binLocation: { type: DataTypes.STRING(50), field: 'bin_location' },
   minStock: { type: DataTypes.INTEGER, defaultValue: 0, field: 'min_stock' },
   note: { type: DataTypes.TEXT },
@@ -140,7 +141,9 @@ const SystemLog = sequelize.define('SystemLog', {
 
 // ============= ASSOCIATIONS =============
 Material.belongsTo(Warehouse, { foreignKey: 'warehouseId', as: 'warehouse' });
+Material.belongsTo(Supplier, { foreignKey: 'supplierId', as: 'supplier' }); // Nhà cung cấp mặc định
 Warehouse.hasMany(Material, { foreignKey: 'warehouseId' });
+Supplier.hasMany(Material, { foreignKey: 'supplierId' });
 
 StockIn.belongsTo(Material, { foreignKey: 'materialId', as: 'material' });
 StockIn.belongsTo(Supplier, { foreignKey: 'supplierId', as: 'supplier' });

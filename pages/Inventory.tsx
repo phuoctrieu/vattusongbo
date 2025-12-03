@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Material, MaterialType, UserRole, MATERIAL_TYPE_LABELS, Warehouse, UNIT_SUGGESTIONS } from '../types';
+import { Material, MaterialType, UserRole, MATERIAL_TYPE_LABELS, Warehouse, Supplier, UNIT_SUGGESTIONS } from '../types';
 import { db } from '../services/mockDb';
-import { Search, AlertTriangle, Filter, Plus, MapPin, Edit2, Trash2, X, Upload, Download, FileSpreadsheet, Box } from 'lucide-react';
+import { Search, AlertTriangle, Filter, Plus, MapPin, Edit2, Trash2, X, Upload, Download, FileSpreadsheet, Box, Truck } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface InventoryProps {
@@ -11,7 +11,9 @@ interface InventoryProps {
 const Inventory: React.FC<InventoryProps> = ({ userRole }) => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<MaterialType | 'ALL'>('ALL');
   const [filterWarehouse, setFilterWarehouse] = useState<string>('ALL');
@@ -19,11 +21,12 @@ const Inventory: React.FC<InventoryProps> = ({ userRole }) => {
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Partial<Material>>({
+  const [formData, setFormData] = useState<Partial<Material & { supplierId?: number }>>({
     type: MaterialType.CONSUMABLE,
     unit: 'Cái',
     minStock: 0,
     warehouseId: 1,
+    supplierId: undefined,
     binLocation: ''
   });
 
@@ -31,11 +34,20 @@ const Inventory: React.FC<InventoryProps> = ({ userRole }) => {
 
   const fetchData = async () => {
     setLoading(true);
-    const [data, wh] = await Promise.all([db.getMaterials(), db.getWarehouses()]);
-    setMaterials(data);
-    setWarehouses(wh);
-    if(wh.length > 0 && !isEditing && !formData.warehouseId) {
-        setFormData(prev => ({...prev, warehouseId: wh[0].id}));
+    try {
+      const [data, wh, sup] = await Promise.all([
+        db.getMaterials(), 
+        db.getWarehouses(),
+        db.getSuppliers()
+      ]);
+      setMaterials(data);
+      setWarehouses(wh);
+      setSuppliers(sup);
+      if(wh.length > 0 && !isEditing && !formData.warehouseId) {
+          setFormData(prev => ({...prev, warehouseId: wh[0].id}));
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
     }
     setLoading(false);
   };
@@ -51,6 +63,7 @@ const Inventory: React.FC<InventoryProps> = ({ userRole }) => {
         unit: 'Cái',
         minStock: 0,
         warehouseId: warehouses[0]?.id || 0,
+        supplierId: suppliers[0]?.id || undefined,
         name: '',
         note: '',
         binLocation: ''
@@ -74,13 +87,21 @@ const Inventory: React.FC<InventoryProps> = ({ userRole }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name && formData.unit && formData.type && formData.warehouseId) {
-        if (isEditing && formData.id) {
-            await db.updateMaterial(formData.id, formData);
-        } else {
-            await db.addMaterial(formData as Material);
+        setSubmitting(true);
+        try {
+            if (isEditing && formData.id) {
+                await db.updateMaterial(formData.id, formData);
+            } else {
+                await db.addMaterial(formData as Material);
+            }
+            setShowModal(false);
+            await fetchData();
+        } catch (error: any) {
+            console.error('Error saving material:', error);
+            alert('Lỗi: ' + (error.message || 'Không thể lưu vật tư'));
+        } finally {
+            setSubmitting(false);
         }
-        setShowModal(false);
-        fetchData();
     }
   };
 
@@ -391,6 +412,21 @@ const Inventory: React.FC<InventoryProps> = ({ userRole }) => {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <span className="flex items-center gap-1"><Truck size={14} /> Nhà Cung Cấp</span>
+                </label>
+                <select className="w-full border rounded-lg px-3 py-2 bg-white"
+                     value={formData.supplierId || ''} 
+                     onChange={e => setFormData({...formData, supplierId: e.target.value ? parseInt(e.target.value) : undefined})}>
+                    <option value="">-- Chọn nhà cung cấp (tuỳ chọn) --</option>
+                    {suppliers.map(s => (
+                         <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                </select>
+                {suppliers.length === 0 && <p className="text-xs text-slate-400 mt-1">Chưa có nhà cung cấp. Vào mục "Nhà cung cấp" để thêm.</p>}
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Vị trí chi tiết (Bin Location)</label>
                 <input type="text" className="w-full border rounded-lg px-3 py-2"
                     placeholder="Ví dụ: Kệ A - Tầng 2 - Hộc 10"
@@ -425,9 +461,9 @@ const Inventory: React.FC<InventoryProps> = ({ userRole }) => {
                     value={formData.note || ''} onChange={e => setFormData({...formData, note: e.target.value})} />
               </div>
               <div className="flex gap-3 justify-end mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Hủy</button>
-                <button type="submit" disabled={warehouses.length === 0} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                    {isEditing ? 'Lưu Thay Đổi' : 'Tạo Mới'}
+                <button type="button" onClick={() => setShowModal(false)} disabled={submitting} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50">Hủy</button>
+                <button type="submit" disabled={warehouses.length === 0 || submitting} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                    {submitting ? 'Đang lưu...' : (isEditing ? 'Lưu Thay Đổi' : 'Tạo Mới')}
                 </button>
               </div>
             </form>

@@ -97,7 +97,9 @@ export interface Material {
   unit: string;           // đơn_vị_tính
   type: MaterialType;     // loại_vật_tư
   warehouseId: number;    // Kho lưu trữ
-  binLocation?: string;   // Vị trí chi tiết (Kệ A, Hộc 1...) -- NEW
+  supplierId?: number;    // Nhà cung cấp mặc định
+  supplierName?: string;  // Helper để hiển thị
+  binLocation?: string;   // Vị trí chi tiết (Kệ A, Hộc 1...) 
   minStock: number;       // mức_tồn_tối_thiểu
   note?: string;          // ghi_chú
   currentStock: number;   // Calculated from stock table
