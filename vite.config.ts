@@ -60,7 +60,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: false,
-      minify: 'terser',
+      minify: 'esbuild', // Dùng esbuild (mặc định, nhanh, không cần cài thêm)
       rollupOptions: {
         output: {
           manualChunks: {
