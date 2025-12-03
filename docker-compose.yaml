@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # =========================================
+  # 1. DATABASE - PostgreSQL 15
+  # =========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: songbo_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: root_user
+      POSTGRES_PASSWORD: root_password
+      POSTGRES_DB: factory_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - songbo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root_user -d factory_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =========================================
+  # 2. BACKEND API - Python FastAPI
+  # =========================================
+  songbo_backend:
+    build: ./backend_api
+    container_name: songbo_backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://root_user:root_password@postgres:5432/factory_db
+    networks:
+      - songbo-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =========================================
+  # 3. FRONTEND - React + Nginx (Reverse Proxy)
+  # =========================================
+  songbo_frontend:
+    build: .
+    container_name: songbo_frontend
+    restart: always
+    ports:
+      - "80:80"
+    networks:
+      - songbo-network
+    depends_on:
+      - songbo_backend
+
+# =========================================
+# NETWORKS
+# =========================================
+networks:
+  songbo-network:
+    driver: bridge
+
+# =========================================
+# VOLUMES
+# =========================================
+volumes:
+  postgres_data:
