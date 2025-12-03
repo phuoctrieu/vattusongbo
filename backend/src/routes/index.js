@@ -222,34 +222,35 @@ router.delete('/materials/:id', async (req, res) => {
 });
 
 // ============= TRANSACTIONS =============
+// Trả về format { ins, outs, borrows } để tương thích với frontend
 router.get('/transactions', async (req, res) => {
   try {
     const stockIns = await StockIn.findAll({ include: [{ model: Material, as: 'material' }, { model: Supplier, as: 'supplier' }] });
     const stockOuts = await StockOut.findAll({ include: [{ model: Material, as: 'material' }] });
     const borrows = await BorrowRecord.findAll({ include: [{ model: Material, as: 'material' }] });
 
-    const transactions = [
-      ...stockIns.map(si => ({
-        id: si.id, type: 'IN', materialId: si.materialId,
+    // Format response để tương thích với frontend
+    res.json({
+      ins: stockIns.map(si => ({
+        id: si.id, materialId: si.materialId,
         materialName: si.material?.name, materialCode: si.material?.code, materialUnit: si.material?.unit,
         quantity: si.quantity, date: si.date, supplierId: si.supplierId,
         supplierName: si.supplier?.name, price: si.price, importer: si.importer,
         documentUrl: si.documentUrl, note: si.note
       })),
-      ...stockOuts.map(so => ({
-        id: so.id, type: 'OUT', materialId: so.materialId,
+      outs: stockOuts.map(so => ({
+        id: so.id, materialId: so.materialId,
         materialName: so.material?.name, materialCode: so.material?.code, materialUnit: so.material?.unit,
         quantity: so.quantity, date: so.date, receiver: so.receiver,
         department: so.department, reason: so.reason, exporter: so.exporter
       })),
-      ...borrows.map(br => ({
-        id: br.id, type: 'BORROW', materialId: br.materialId,
+      borrows: borrows.map(br => ({
+        id: br.id, materialId: br.materialId,
         materialName: br.material?.name, borrower: br.borrower, borrowDate: br.borrowDate,
         quantity: br.quantity, condition: br.condition, expectedReturn: br.expectedReturn,
         approver: br.approver, status: br.status, returnDate: br.returnDate, returnCondition: br.returnCondition
       }))
-    ];
-    res.json(transactions);
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
