@@ -21,8 +21,9 @@ let MAINTENANCE_SCHEDULES: MaintenanceSchedule[] = [];
 let MAINTENANCE_LOGS: MaintenanceLog[] = [];
 
 // Keep only ONE admin user for initial login
+// Thông tin đăng nhập chuẩn: admin / adminSB
 let USERS: User[] = [
-  { id: 1, username: 'admin', fullName: 'Quản Trị Viên', role: UserRole.ADMIN, password: 'admin', active: true },
+  { id: 1, username: 'admin', fullName: 'Quản Trị Viên', role: UserRole.ADMIN, password: 'adminSB', active: true },
 ];
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));

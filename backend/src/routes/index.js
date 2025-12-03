@@ -461,22 +461,30 @@ router.get('/logs', async (req, res) => {
 // ============= INIT DATA =============
 router.post('/init-data', async (req, res) => {
   try {
-    const [admin, created] = await User.findOrCreate({
-      where: { username: 'admin' },
-      defaults: {
-        password: await bcrypt.hash('admin123', 10),
+    // Tạo hoặc cập nhật admin với password chuẩn: adminSB
+    let admin = await User.findOne({ where: { username: 'admin' } });
+    const hashedPassword = await bcrypt.hash('adminSB', 10);
+    
+    if (admin) {
+      // Cập nhật password nếu admin đã tồn tại
+      await admin.update({ password: hashedPassword });
+    } else {
+      // Tạo mới admin
+      admin = await User.create({
+        username: 'admin',
+        password: hashedPassword,
         role: 'ADMIN',
         fullName: 'Quản trị viên',
         active: true
-      }
-    });
+      });
+    }
 
     await Warehouse.findOrCreate({
       where: { name: 'Kho chính' },
       defaults: { location: 'Tầng 1 - Nhà xưởng' }
     });
 
-    res.json({ message: 'Đã khởi tạo dữ liệu mặc định', adminCreated: created });
+    res.json({ message: 'Đã khởi tạo dữ liệu mặc định (admin/adminSB)', adminUpdated: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
