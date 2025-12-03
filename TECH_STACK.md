@@ -2,6 +2,14 @@
 
 Tài liệu này mô tả kiến trúc hệ thống và hướng dẫn triển khai ứng dụng lên VPS sử dụng Docker.
 
+## 🔐 Thông tin đăng nhập mặc định
+
+| Tài khoản | Mật khẩu | Vai trò |
+|-----------|----------|---------|
+| `admin`   | `adminSB` | ADMIN  |
+
+> **Lưu ý:** Sau khi triển khai, hãy gọi API `/init-data` để khởi tạo dữ liệu mặc định.
+
 ## 1. Kiến trúc Hệ thống (Architecture)
 
 Mô hình: **Client-Server** kết hợp **Reverse Proxy**.
