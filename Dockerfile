@@ -11,11 +11,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy source code
+# Copy source code (exclude backend folder)
 COPY . .
 
 # Build production
-ENV VITE_USE_REAL_BACKEND=true
+ENV VITE_API_BASE_URL=/api
 RUN npm run build
 
 # =============================================
@@ -34,4 +34,3 @@ EXPOSE 80
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
-
