@@ -28,9 +28,9 @@ services:
       - factory-network
 
   # Backend API (Node.js + Express)
-  vattusongbo_backend:
+  songbo_backend:
     build: ./backend
-    container_name: vattusongbo_backend
+    container_name: songbo_backend
     restart: always
     ports:
       - "3001:3001"
@@ -51,14 +51,14 @@ services:
       - factory-network
 
   # Frontend (React + Nginx)
-  vattusongbo_frontend:
+  songbo_frontend:
     build: .
-    container_name: vattusongbo_frontend
+    container_name: songbo_frontend
     restart: always
     ports:
       - "80:80"
     depends_on:
-      - vattusongbo_backend
+      - songbo_backend
     networks:
       - factory-network
 
