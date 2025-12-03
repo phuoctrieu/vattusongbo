@@ -62,8 +62,7 @@ services:
     ports:
       - "80:80"
     depends_on:
-      songbo_backend:
-        condition: service_healthy
+      - songbo_backend
     networks:
       - factory-network
 
