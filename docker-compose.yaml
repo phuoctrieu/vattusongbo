@@ -1,15 +1,13 @@
 # =============================================
-# DOCKER COMPOSE - LOCAL DEVELOPMENT
-# Dùng để test local trước khi đẩy lên VPS
+# DOCKER COMPOSE - VẬT TƯ SÔNG BỒ
+# Frontend (Nginx) -> Backend (Node.js) -> PostgreSQL
 # =============================================
 
-version: '3.8'
-
 services:
-  # Database (Local testing)
+  # ============= DATABASE =============
   postgres:
     image: postgres:16-alpine
-    container_name: songbo_local_postgres
+    container_name: songbo_postgres
     restart: always
     environment:
       POSTGRES_USER: root_user
@@ -27,7 +25,7 @@ services:
     networks:
       - factory-network
 
-  # Backend API (Node.js + Express)
+  # ============= BACKEND API (Node.js + Express) =============
   songbo_backend:
     build: ./backend
     container_name: songbo_backend
@@ -47,10 +45,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - factory-network
 
-  # Frontend (React + Nginx)
+  # ============= FRONTEND (React + Nginx) =============
   songbo_frontend:
     build: .
     container_name: songbo_frontend
@@ -58,7 +62,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - songbo_backend
+      songbo_backend:
+        condition: service_healthy
     networks:
       - factory-network
 
