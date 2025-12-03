@@ -14,8 +14,9 @@ RUN npm install
 # Copy source code (exclude backend folder)
 COPY . .
 
-# Build production
+# Build production - BẮT BUỘC set VITE_USE_REAL_BACKEND=true để dùng API thực
 ENV VITE_API_BASE_URL=/api
+ENV VITE_USE_REAL_BACKEND=true
 RUN npm run build
 
 # =============================================

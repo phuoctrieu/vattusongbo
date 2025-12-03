@@ -11,8 +11,8 @@ export default defineConfig(({ mode }) => {
   // Fix lỗi TypeScript 'cwd' bằng cách ép kiểu process
   const env = loadEnv(mode, (process as any).cwd(), '');
   
-  // Mặc định backend chạy ở port 8090 khi dev local
-  const BACKEND_URL = env.BACKEND_URL || 'http://localhost:8090';
+  // Mặc định backend chạy ở port 3001 khi dev local (theo docker-compose)
+  const BACKEND_URL = env.BACKEND_URL || 'http://localhost:3001';
 
   return {
     plugins: [react()],
