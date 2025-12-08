@@ -85,6 +85,7 @@ export const api = {
   // Proposals (Đề xuất mua vật tư)
   getProposals: () => request('/proposals'),
   createProposal: (data: any) => request('/proposals', { method: 'POST', body: JSON.stringify(data) }),
+  updateProposal: (id: number, data: any) => request(`/proposals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   approveProposal: (id: number, approverId: number) => request(`/proposals/${id}/approve`, { method: 'POST', body: JSON.stringify({ approverId }) }),
   rejectProposal: (id: number, approverId: number, rejectReason: string) => request(`/proposals/${id}/reject`, { method: 'POST', body: JSON.stringify({ approverId, rejectReason }) }),
   markProposalPurchased: (id: number) => request(`/proposals/${id}/mark-purchased`, { method: 'POST' }),

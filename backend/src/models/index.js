@@ -161,7 +161,7 @@ const ProposalItem = sequelize.define('ProposalItem', {
   name: { type: DataTypes.STRING(200), allowNull: false },
   type: { type: DataTypes.STRING(30) },
   unit: { type: DataTypes.STRING(20) },
-  quantity: { type: DataTypes.INTEGER },
+  quantity: { type: DataTypes.FLOAT }, // Cho phép số thập phân
   estimatedPrice: { type: DataTypes.FLOAT, field: 'estimated_price' },
   reason: { type: DataTypes.TEXT },
   note: { type: DataTypes.TEXT }

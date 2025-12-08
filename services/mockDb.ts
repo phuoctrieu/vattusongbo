@@ -259,6 +259,25 @@ const mockDb = {
       return proposal;
   },
 
+  updateProposal: async (id: number, data: any) => {
+      await delay(400);
+      const idx = PROPOSALS.findIndex(p => p.id === id);
+      if (idx === -1) throw new Error('Không tìm thấy đề xuất');
+      if (PROPOSALS[idx].status !== ProposalStatus.PENDING) throw new Error('Chỉ có thể sửa đề xuất đang chờ duyệt');
+      
+      PROPOSALS[idx] = {
+          ...PROPOSALS[idx],
+          department: data.department || PROPOSALS[idx].department,
+          priority: data.priority || PROPOSALS[idx].priority,
+          reason: data.reason || PROPOSALS[idx].reason,
+          note: data.note,
+          items: data.items.map((item: any, i: number) => ({ ...item, id: i + 1, proposalId: id }))
+      };
+      
+      logAction('PROPOSAL', `Cập nhật đề xuất: ${PROPOSALS[idx].code}`, 'system');
+      return PROPOSALS[idx];
+  },
+
   approveProposal: async (id: number, approverId: number) => {
       await delay(400);
       const idx = PROPOSALS.findIndex(p => p.id === id);

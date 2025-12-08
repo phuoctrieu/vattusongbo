@@ -620,6 +620,58 @@ router.post('/proposals', async (req, res) => {
   }
 });
 
+// Cập nhật đề xuất (chỉ khi PENDING)
+router.put('/proposals/:id', async (req, res) => {
+  try {
+    const proposal = await Proposal.findByPk(req.params.id);
+    if (!proposal) return res.status(404).json({ error: 'Không tìm thấy đề xuất' });
+    if (proposal.status !== 'PENDING') return res.status(400).json({ error: 'Chỉ có thể sửa đề xuất đang chờ duyệt' });
+    
+    const { department, priority, reason, note, items } = req.body;
+    
+    // Update proposal info
+    proposal.department = department || proposal.department;
+    proposal.priority = priority || proposal.priority;
+    proposal.reason = reason || proposal.reason;
+    proposal.note = note;
+    await proposal.save();
+    
+    // Update items - xóa cũ, tạo mới
+    if (items && items.length > 0) {
+      await ProposalItem.destroy({ where: { proposalId: proposal.id } });
+      for (const item of items) {
+        await ProposalItem.create({
+          proposalId: proposal.id,
+          name: item.name,
+          type: item.type,
+          unit: item.unit,
+          quantity: item.quantity,
+          estimatedPrice: item.estimatedPrice,
+          reason: item.reason,
+          note: item.note
+        });
+      }
+    }
+    
+    await createLog('PROPOSAL', `Cập nhật đề xuất: ${proposal.code}`, 'system');
+    
+    // Lấy lại đầy đủ
+    const fullProposal = await Proposal.findByPk(proposal.id, {
+      include: [
+        { model: User, as: 'requester', attributes: ['id', 'fullName'] },
+        { model: ProposalItem, as: 'items' }
+      ]
+    });
+    
+    res.json({
+      ...fullProposal.toJSON(),
+      requesterName: fullProposal.requester?.fullName
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Duyệt đề xuất
 router.post('/proposals/:id/approve', async (req, res) => {
   try {

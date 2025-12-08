@@ -7,7 +7,7 @@ import {
 import { db } from '../services/mockDb';
 import { 
   Plus, Search, Filter, Check, X, FileText, Clock, AlertTriangle,
-  CheckCircle, XCircle, ShoppingCart, Download, Trash2, Eye, ChevronDown
+  CheckCircle, XCircle, ShoppingCart, Download, Trash2, Eye, ChevronDown, Edit2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -23,6 +23,8 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [filterStatus, setFilterStatus] = useState<ProposalStatus | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingProposalId, setEditingProposalId] = useState<number | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -70,6 +72,28 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
       estimatedPrice: 0,
       reason: ''
     }]);
+    setIsEditing(false);
+    setEditingProposalId(null);
+  };
+
+  const openEditModal = (proposal: Proposal) => {
+    setIsEditing(true);
+    setEditingProposalId(proposal.id);
+    setFormData({
+      department: proposal.department,
+      priority: proposal.priority,
+      reason: proposal.reason,
+      note: proposal.note || ''
+    });
+    setItems(proposal.items.map(item => ({
+      name: item.name,
+      type: item.type,
+      unit: item.unit,
+      quantity: item.quantity,
+      estimatedPrice: item.estimatedPrice || 0,
+      reason: item.reason || ''
+    })));
+    setShowModal(true);
   };
 
   const handleSubmit = async () => {
@@ -79,19 +103,31 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
     }
 
     try {
-      await db.createProposal({
-        requesterId: user.id,
-        department: formData.department,
-        priority: formData.priority,
-        reason: formData.reason,
-        note: formData.note,
-        items: items as ProposalItem[]
-      });
+      if (isEditing && editingProposalId) {
+        // Update existing
+        await db.updateProposal(editingProposalId, {
+          department: formData.department,
+          priority: formData.priority,
+          reason: formData.reason,
+          note: formData.note,
+          items: items as ProposalItem[]
+        });
+      } else {
+        // Create new
+        await db.createProposal({
+          requesterId: user.id,
+          department: formData.department,
+          priority: formData.priority,
+          reason: formData.reason,
+          note: formData.note,
+          items: items as ProposalItem[]
+        });
+      }
       setShowModal(false);
       resetForm();
       fetchData();
     } catch (error) {
-      alert('Lỗi khi tạo đề xuất');
+      alert(isEditing ? 'Lỗi khi cập nhật đề xuất' : 'Lỗi khi tạo đề xuất');
     }
   };
 
@@ -410,6 +446,16 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
                       </button>
                     )}
                     
+                    {proposal.status === ProposalStatus.PENDING && (
+                      <button
+                        onClick={() => openEditModal(proposal)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                    )}
+                    
                     {(proposal.status === ProposalStatus.PENDING || proposal.status === ProposalStatus.REJECTED) && (
                       <button
                         onClick={() => handleDelete(proposal.id)}
@@ -427,13 +473,15 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
         )}
       </div>
 
-      {/* Create Modal */}
+      {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl my-8">
             <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-800">Tạo đề xuất mới</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
+              <h2 className="text-xl font-bold text-slate-800">
+                {isEditing ? 'Chỉnh sửa đề xuất' : 'Tạo đề xuất mới'}
+              </h2>
+              <button onClick={() => { setShowModal(false); resetForm(); }} className="p-2 hover:bg-slate-100 rounded-lg">
                 <X size={20} />
               </button>
             </div>
@@ -529,11 +577,12 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
                         <div className="flex gap-2">
                           <input
                             type="number"
-                            className="w-20 border border-slate-200 rounded-lg px-3 py-2"
+                            className="w-24 border border-slate-200 rounded-lg px-3 py-2"
                             placeholder="SL"
-                            min={1}
+                            min={0.01}
+                            step="any"
                             value={item.quantity}
-                            onChange={e => updateItem(idx, 'quantity', parseInt(e.target.value) || 1)}
+                            onChange={e => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
                           />
                           <select
                             className="flex-1 border border-slate-200 rounded-lg px-3 py-2 bg-white"
@@ -577,7 +626,7 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
             
             <div className="p-4 sm:p-6 border-t border-slate-200 flex justify-end gap-3">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => { setShowModal(false); resetForm(); }}
                 className="px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
               >
                 Hủy
@@ -586,7 +635,7 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
                 onClick={handleSubmit}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
-                Tạo đề xuất
+                {isEditing ? 'Cập nhật' : 'Tạo đề xuất'}
               </button>
             </div>
           </div>
