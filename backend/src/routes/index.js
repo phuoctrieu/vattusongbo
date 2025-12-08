@@ -206,11 +206,20 @@ router.post('/materials', async (req, res) => {
     if (!code) {
       // Tạo code dựa trên loại vật tư
       const prefixMap = {
+        // Vật tư chung
         'CONSUMABLE': 'VT',
+        'CONSTRUCTION': 'VT-XD',
+        // Dụng cụ & Thiết bị
         'ELECTRIC_TOOL': 'DC-D',
         'MECHANICAL_TOOL': 'DC-CK',
         'ELECTRIC_DEVICE': 'TB-D',
-        'MECHANICAL_DEVICE': 'TB-CK'
+        'MECHANICAL_DEVICE': 'TB-CK',
+        // Vật tư chuyên ngành điện
+        'STATION_220KV': 'T220',
+        'LINE_220KV': 'DD220',
+        'STATION_35KV': 'T35',
+        'LINE_35KV': 'DD35',
+        'TURBINE_UNIT': 'TM'
       };
       const prefix = prefixMap[type] || 'VT';
       

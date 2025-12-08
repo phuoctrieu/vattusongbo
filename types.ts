@@ -7,11 +7,22 @@ export enum UserRole {
 }
 
 export enum MaterialType {
+  // Vật tư chung
   CONSUMABLE = 'CONSUMABLE',       // Vật tư tiêu hao
+  CONSTRUCTION = 'CONSTRUCTION',   // Vật tư xây dựng
+  
+  // Dụng cụ & Thiết bị
   ELECTRIC_TOOL = 'ELECTRIC_TOOL', // Dụng cụ điện
   MECHANICAL_TOOL = 'MECHANICAL_TOOL', // Dụng cụ cơ khí
   ELECTRIC_DEVICE = 'ELECTRIC_DEVICE', // Thiết bị điện
-  MECHANICAL_DEVICE = 'MECHANICAL_DEVICE' // Thiết bị cơ khí
+  MECHANICAL_DEVICE = 'MECHANICAL_DEVICE', // Thiết bị cơ khí
+  
+  // Vật tư chuyên ngành điện
+  STATION_220KV = 'STATION_220KV',     // Vật tư trạm 220kV
+  LINE_220KV = 'LINE_220KV',           // Vật tư đường dây 220kV
+  STATION_35KV = 'STATION_35KV',       // Vật tư trạm 35kV
+  LINE_35KV = 'LINE_35KV',             // Vật tư đường dây 35kV
+  TURBINE_UNIT = 'TURBINE_UNIT'        // Vật tư tổ máy
 }
 
 export enum ToolCondition {
@@ -174,11 +185,22 @@ export interface SystemLog {
 }
 
 export const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
+  // Vật tư chung
   [MaterialType.CONSUMABLE]: 'Vật tư tiêu hao',
+  [MaterialType.CONSTRUCTION]: 'Vật tư xây dựng',
+  
+  // Dụng cụ & Thiết bị
   [MaterialType.ELECTRIC_TOOL]: 'Dụng cụ điện',
   [MaterialType.MECHANICAL_TOOL]: 'Dụng cụ cơ khí',
   [MaterialType.ELECTRIC_DEVICE]: 'Thiết bị điện',
-  [MaterialType.MECHANICAL_DEVICE]: 'Thiết bị cơ khí'
+  [MaterialType.MECHANICAL_DEVICE]: 'Thiết bị cơ khí',
+  
+  // Vật tư chuyên ngành điện
+  [MaterialType.STATION_220KV]: 'Vật tư trạm 220kV',
+  [MaterialType.LINE_220KV]: 'Vật tư đường dây 220kV',
+  [MaterialType.STATION_35KV]: 'Vật tư trạm 35kV',
+  [MaterialType.LINE_35KV]: 'Vật tư đường dây 35kV',
+  [MaterialType.TURBINE_UNIT]: 'Vật tư tổ máy'
 };
 
 export const UNIT_SUGGESTIONS = ['Cái', 'Bộ', 'Lít', 'Kg', 'Mét', 'Hộp', 'Cuộn', 'Chiếc'];
