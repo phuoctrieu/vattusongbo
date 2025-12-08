@@ -107,26 +107,35 @@ const Inventory: React.FC<InventoryProps> = ({ userRole }) => {
 
   // --- EXCEL IMPORT/EXPORT LOGIC (Using XLSX) ---
   const handleDownloadTemplate = () => {
-      // Create example data
+      // Create example data với nhiều loại vật tư khác nhau
       const data = [
-          { "Loại VT (Mã)": "CONSUMABLE", "Tên Vật Tư": "Dầu Nhớt", "Đơn Vị Tính": "Lít", "Min Stock": 10, "Ghi chú": "Dầu cho máy phát", "Vị trí kệ (Bin)": "Kệ A-01", "Mã (Tuỳ chọn)": "VT-TEST-01" },
+          { "Loại VT (Mã)": "CONSUMABLE", "Tên Vật Tư": "Dầu Nhớt", "Đơn Vị Tính": "Lít", "Min Stock": 10, "Ghi chú": "Dầu cho máy phát", "Vị trí kệ (Bin)": "Kệ A-01", "Mã (Tuỳ chọn)": "" },
           { "Loại VT (Mã)": "ELECTRIC_TOOL", "Tên Vật Tư": "Kìm điện", "Đơn Vị Tính": "Cái", "Min Stock": 2, "Ghi chú": "Kìm 20cm", "Vị trí kệ (Bin)": "Hộp B2", "Mã (Tuỳ chọn)": "" },
+          { "Loại VT (Mã)": "STATION_220KV", "Tên Vật Tư": "Sứ cách điện 220kV", "Đơn Vị Tính": "Bộ", "Min Stock": 5, "Ghi chú": "Sứ đỡ thanh cái", "Vị trí kệ (Bin)": "Kho T220", "Mã (Tuỳ chọn)": "" },
+          { "Loại VT (Mã)": "TURBINE_UNIT", "Tên Vật Tư": "Phớt bơm nước", "Đơn Vị Tính": "Cái", "Min Stock": 3, "Ghi chú": "Phớt tổ máy H1", "Vị trí kệ (Bin)": "Kho TM", "Mã (Tuỳ chọn)": "" },
       ];
 
-      // Add instruction sheet
+      // Add instruction sheet với tất cả loại vật tư
       const instructionData = [
-          { "Mã": "CONSUMABLE", "Mô tả": "Vật tư tiêu hao" },
-          { "Mã": "ELECTRIC_TOOL", "Mô tả": "Dụng cụ điện" },
-          { "Mã": "MECHANICAL_TOOL", "Mô tả": "Dụng cụ cơ khí" },
-          { "Mã": "ELECTRIC_DEVICE", "Mô tả": "Thiết bị điện" },
-          { "Mã": "MECHANICAL_DEVICE", "Mô tả": "Thiết bị cơ khí" },
+          { "Mã": "CONSUMABLE", "Mô tả": "Vật tư tiêu hao", "Prefix tự động": "VT-XXXX" },
+          { "Mã": "CONSTRUCTION", "Mô tả": "Vật tư xây dựng", "Prefix tự động": "VT-XD-XXXX" },
+          { "Mã": "ELECTRIC_TOOL", "Mô tả": "Dụng cụ điện", "Prefix tự động": "DC-D-XXXX" },
+          { "Mã": "MECHANICAL_TOOL", "Mô tả": "Dụng cụ cơ khí", "Prefix tự động": "DC-CK-XXXX" },
+          { "Mã": "ELECTRIC_DEVICE", "Mô tả": "Thiết bị điện", "Prefix tự động": "TB-D-XXXX" },
+          { "Mã": "MECHANICAL_DEVICE", "Mô tả": "Thiết bị cơ khí", "Prefix tự động": "TB-CK-XXXX" },
+          { "Mã": "STATION_220KV", "Mô tả": "Vật tư trạm 220kV", "Prefix tự động": "T220-XXXX" },
+          { "Mã": "LINE_220KV", "Mô tả": "Vật tư đường dây 220kV", "Prefix tự động": "DD220-XXXX" },
+          { "Mã": "STATION_35KV", "Mô tả": "Vật tư trạm 35kV", "Prefix tự động": "T35-XXXX" },
+          { "Mã": "LINE_35KV", "Mô tả": "Vật tư đường dây 35kV", "Prefix tự động": "DD35-XXXX" },
+          { "Mã": "TURBINE_UNIT", "Mô tả": "Vật tư tổ máy", "Prefix tự động": "TM-XXXX" },
       ];
 
       const ws = XLSX.utils.json_to_sheet(data);
       const wsInfo = XLSX.utils.json_to_sheet(instructionData);
 
       // Add width for readability
-      ws['!cols'] = [{wch: 20}, {wch: 25}, {wch: 10}, {wch: 10}, {wch: 25}, {wch: 15}, {wch: 15}];
+      ws['!cols'] = [{wch: 20}, {wch: 30}, {wch: 12}, {wch: 10}, {wch: 25}, {wch: 15}, {wch: 15}];
+      wsInfo['!cols'] = [{wch: 20}, {wch: 30}, {wch: 18}];
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_Nhap");
