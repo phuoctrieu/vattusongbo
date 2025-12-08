@@ -14,6 +14,8 @@ export enum MaterialType {
   // Dụng cụ & Thiết bị
   ELECTRIC_TOOL = 'ELECTRIC_TOOL', // Dụng cụ điện
   MECHANICAL_TOOL = 'MECHANICAL_TOOL', // Dụng cụ cơ khí
+  HAND_TOOL = 'HAND_TOOL',         // Dụng cụ cầm tay
+  TOOLBOX = 'TOOLBOX',             // Hộp đồ nghề
   ELECTRIC_DEVICE = 'ELECTRIC_DEVICE', // Thiết bị điện
   MECHANICAL_DEVICE = 'MECHANICAL_DEVICE', // Thiết bị cơ khí
   
@@ -252,6 +254,8 @@ export const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
   // Dụng cụ & Thiết bị
   [MaterialType.ELECTRIC_TOOL]: 'Dụng cụ điện',
   [MaterialType.MECHANICAL_TOOL]: 'Dụng cụ cơ khí',
+  [MaterialType.HAND_TOOL]: 'Dụng cụ cầm tay',
+  [MaterialType.TOOLBOX]: 'Hộp đồ nghề',
   [MaterialType.ELECTRIC_DEVICE]: 'Thiết bị điện',
   [MaterialType.MECHANICAL_DEVICE]: 'Thiết bị cơ khí',
   

@@ -20,8 +20,14 @@ import { UserRole } from './types';
 function App() {
   const [user, setUser] = useState<{ id: number; fullName: string; role: UserRole } | null>(null);
 
-  const handleLogin = (fullName: string, role: UserRole, id?: number) => {
-    // Nhận fullName trực tiếp từ API login
+  const handleLogin = (username: string, role: UserRole, id?: number) => {
+    // In a real app, we get full user object from login API
+    // Here we simulate it based on username if not already passed fully
+    const fullName = username === 'admin' ? 'Administrator' 
+                   : username === 'kho' ? 'Nguyễn Văn Kho' 
+                   : username === 'giamdoc' ? 'Lê Giám Đốc'
+                   : username === 'staff' ? 'Trần Văn Nhân Viên'
+                   : 'Nhân viên';
     setUser({ id: id || 1, fullName, role });
   };
 

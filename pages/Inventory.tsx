@@ -121,6 +121,8 @@ const Inventory: React.FC<InventoryProps> = ({ userRole }) => {
           { "Mã": "CONSTRUCTION", "Mô tả": "Vật tư xây dựng", "Prefix tự động": "VT-XD-XXXX" },
           { "Mã": "ELECTRIC_TOOL", "Mô tả": "Dụng cụ điện", "Prefix tự động": "DC-D-XXXX" },
           { "Mã": "MECHANICAL_TOOL", "Mô tả": "Dụng cụ cơ khí", "Prefix tự động": "DC-CK-XXXX" },
+          { "Mã": "HAND_TOOL", "Mô tả": "Dụng cụ cầm tay", "Prefix tự động": "DC-CT-XXXX" },
+          { "Mã": "TOOLBOX", "Mô tả": "Hộp đồ nghề", "Prefix tự động": "HDN-XXXX" },
           { "Mã": "ELECTRIC_DEVICE", "Mô tả": "Thiết bị điện", "Prefix tự động": "TB-D-XXXX" },
           { "Mã": "MECHANICAL_DEVICE", "Mô tả": "Thiết bị cơ khí", "Prefix tự động": "TB-CK-XXXX" },
           { "Mã": "STATION_220KV", "Mô tả": "Vật tư trạm 220kV", "Prefix tự động": "T220-XXXX" },

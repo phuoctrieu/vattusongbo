@@ -213,6 +213,8 @@ router.post('/materials', async (req, res) => {
         // Dụng cụ & Thiết bị
         'ELECTRIC_TOOL': 'DC-D',
         'MECHANICAL_TOOL': 'DC-CK',
+        'HAND_TOOL': 'DC-CT',
+        'TOOLBOX': 'HDN',
         'ELECTRIC_DEVICE': 'TB-D',
         'MECHANICAL_DEVICE': 'TB-CK',
         // Vật tư chuyên ngành điện
