@@ -14,7 +14,7 @@ const BorrowReturn: React.FC<BorrowReturnProps> = ({ user }) => {
   
   // Borrow Form State
   const [selectedToolId, setSelectedToolId] = useState('');
-  const [borrower, setBorrower] = useState(user.role === UserRole.STAFF ? user.fullName : '');
+  const [borrower] = useState(user.fullName); // Tự động gán tên user đăng nhập
   const [condition, setCondition] = useState('Bình thường');
   const [quantity, setQuantity] = useState(1);
   const [msg, setMsg] = useState({ type: '', text: '' });
@@ -53,7 +53,8 @@ const BorrowReturn: React.FC<BorrowReturnProps> = ({ user }) => {
         fetchData();
         // Reset
         setSelectedToolId('');
-        if(user.role !== UserRole.STAFF) setBorrower('');
+        setQuantity(1);
+        setCondition('Bình thường');
     } catch (err: any) {
         setMsg({ type: 'error', text: err.message });
     }
@@ -138,9 +139,9 @@ const BorrowReturn: React.FC<BorrowReturnProps> = ({ user }) => {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                              <label className="block text-sm font-medium text-slate-700 mb-1">Người mượn</label>
-                             <input required type="text" value={borrower} onChange={e => setBorrower(e.target.value)} 
-                                disabled={user.role === UserRole.STAFF}
-                                className="w-full border rounded-lg px-3 py-2 disabled:bg-slate-100" />
+                             <div className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-700 font-medium">
+                                {user.fullName}
+                             </div>
                         </div>
                         <div>
                              <label className="block text-sm font-medium text-slate-700 mb-1">Số lượng</label>

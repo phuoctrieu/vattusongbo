@@ -28,7 +28,6 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
 
   // Form state
   const [formData, setFormData] = useState({
-    department: '',
     priority: ProposalPriority.NORMAL,
     reason: '',
     note: ''
@@ -38,8 +37,7 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
     type: MaterialType.CONSUMABLE,
     unit: 'Cái',
     quantity: 1,
-    estimatedPrice: 0,
-    reason: ''
+    estimatedPrice: 0
   }]);
 
   const fetchData = async () => {
@@ -59,7 +57,6 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
 
   const resetForm = () => {
     setFormData({
-      department: '',
       priority: ProposalPriority.NORMAL,
       reason: '',
       note: ''
@@ -69,8 +66,7 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
       type: MaterialType.CONSUMABLE,
       unit: 'Cái',
       quantity: 1,
-      estimatedPrice: 0,
-      reason: ''
+      estimatedPrice: 0
     }]);
     setIsEditing(false);
     setEditingProposalId(null);
@@ -80,7 +76,6 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
     setIsEditing(true);
     setEditingProposalId(proposal.id);
     setFormData({
-      department: proposal.department,
       priority: proposal.priority,
       reason: proposal.reason,
       note: proposal.note || ''
@@ -90,14 +85,13 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
       type: item.type,
       unit: item.unit,
       quantity: item.quantity,
-      estimatedPrice: item.estimatedPrice || 0,
-      reason: item.reason || ''
+      estimatedPrice: item.estimatedPrice || 0
     })));
     setShowModal(true);
   };
 
   const handleSubmit = async () => {
-    if (!formData.department || !formData.reason || items.some(i => !i.name || !i.quantity)) {
+    if (!formData.reason || items.some(i => !i.name || !i.quantity)) {
       alert('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
     }
@@ -106,7 +100,7 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
       if (isEditing && editingProposalId) {
         // Update existing
         await db.updateProposal(editingProposalId, {
-          department: formData.department,
+          department: user.fullName, // Dùng tên người dùng hiện tại
           priority: formData.priority,
           reason: formData.reason,
           note: formData.note,
@@ -116,7 +110,7 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
         // Create new
         await db.createProposal({
           requesterId: user.id,
-          department: formData.department,
+          department: user.fullName, // Dùng tên người dùng hiện tại
           priority: formData.priority,
           reason: formData.reason,
           note: formData.note,
@@ -180,8 +174,7 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
       type: MaterialType.CONSUMABLE,
       unit: 'Cái',
       quantity: 1,
-      estimatedPrice: 0,
-      reason: ''
+      estimatedPrice: 0
     }]);
   };
 
@@ -212,7 +205,7 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
           'Mã đề xuất': p.code,
           'Ngày tạo': new Date(p.createdAt).toLocaleDateString('vi-VN'),
           'Người đề xuất': p.requesterName,
-          'Bộ phận': p.department,
+          'Lý do đề xuất': p.reason,
           'Ưu tiên': PROPOSAL_PRIORITY_LABELS[p.priority],
           'STT': idx + 1,
           'Tên vật tư/dụng cụ': item.name,
@@ -221,7 +214,6 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
           'Số lượng': item.quantity,
           'Giá dự kiến': item.estimatedPrice || 0,
           'Thành tiền': (item.quantity || 0) * (item.estimatedPrice || 0),
-          'Lý do': item.reason,
           'Người duyệt': p.approverName,
           'Ngày duyệt': p.approvedAt ? new Date(p.approvedAt).toLocaleDateString('vi-VN') : ''
         });
@@ -230,9 +222,9 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
 
     const ws = XLSX.utils.json_to_sheet(data);
     ws['!cols'] = [
-      {wch: 15}, {wch: 12}, {wch: 18}, {wch: 15}, {wch: 12},
+      {wch: 15}, {wch: 12}, {wch: 18}, {wch: 30}, {wch: 12},
       {wch: 5}, {wch: 30}, {wch: 20}, {wch: 10}, {wch: 10},
-      {wch: 12}, {wch: 15}, {wch: 25}, {wch: 18}, {wch: 12}
+      {wch: 12}, {wch: 15}, {wch: 18}, {wch: 12}
     ];
 
     const wb = XLSX.utils.book_new();
@@ -491,15 +483,11 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Bộ phận/Phòng ban <span className="text-red-500">*</span>
+                    Người đề xuất
                   </label>
-                  <input
-                    type="text"
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2"
-                    placeholder="VD: Tổ máy 1, Phòng kỹ thuật..."
-                    value={formData.department}
-                    onChange={e => setFormData({...formData, department: e.target.value})}
-                  />
+                  <div className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-700 font-medium">
+                    {user.fullName}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Mức độ ưu tiên</label>
@@ -598,13 +586,6 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
                           placeholder="Giá dự kiến (VNĐ)"
                           value={item.estimatedPrice || ''}
                           onChange={e => updateItem(idx, 'estimatedPrice', parseFloat(e.target.value) || 0)}
-                        />
-                        <input
-                          type="text"
-                          className="border border-slate-200 rounded-lg px-3 py-2"
-                          placeholder="Lý do cần mua"
-                          value={item.reason}
-                          onChange={e => updateItem(idx, 'reason', e.target.value)}
                         />
                       </div>
                     </div>
@@ -710,10 +691,7 @@ const Proposals: React.FC<ProposalsProps> = ({ user }) => {
                     <tbody className="divide-y divide-slate-100">
                       {selectedProposal.items.map((item, idx) => (
                         <tr key={idx}>
-                          <td className="px-3 py-2">
-                            <div>{item.name}</div>
-                            {item.reason && <div className="text-xs text-slate-500">{item.reason}</div>}
-                          </td>
+                          <td className="px-3 py-2">{item.name}</td>
                           <td className="px-3 py-2 text-slate-600">{MATERIAL_TYPE_LABELS[item.type]}</td>
                           <td className="px-3 py-2 text-center">{item.quantity} {item.unit}</td>
                           <td className="px-3 py-2 text-right">{(item.estimatedPrice || 0).toLocaleString()}</td>

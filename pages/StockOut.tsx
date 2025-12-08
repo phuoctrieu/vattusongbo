@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/mockDb';
 import { Material, User, UserRole } from '../types';
-import { ArrowUpFromLine, Send, CheckCircle, AlertOctagon, User as UserIcon } from 'lucide-react';
+import { ArrowUpFromLine, Send, CheckCircle, AlertOctagon, User as UserIcon, Search } from 'lucide-react';
 
 interface StockOutProps {
   user: { fullName: string; role: UserRole };
@@ -12,8 +12,9 @@ const StockOut: React.FC<StockOutProps> = ({ user }) => {
   const [users, setUsers] = useState<User[]>([]);
   
   const [selectedMaterialId, setSelectedMaterialId] = useState<string>('');
+  const [materialSearch, setMaterialSearch] = useState(''); // Tìm kiếm vật tư
   const [quantity, setQuantity] = useState<number>(0);
-  const [receiver, setReceiver] = useState('');
+  const [receiverId, setReceiverId] = useState<string>(''); // Chọn từ list user
   const [department, setDepartment] = useState('');
   const [reason, setReason] = useState('');
   const [exporter, setExporter] = useState(user.fullName);
@@ -25,22 +26,24 @@ const StockOut: React.FC<StockOutProps> = ({ user }) => {
     const load = async () => {
         const [m, u] = await Promise.all([db.getMaterials(), db.getUsers()]);
         setMaterials(m);
-        setUsers(u);
+        setUsers(u.filter((user: User) => user.active)); // Chỉ lấy user active
     };
     load();
   }, [success]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedMaterialId) return;
+    if (!selectedMaterialId || !receiverId) return;
     setError('');
 
+    const selectedUser = users.find(u => u.id === parseInt(receiverId));
+    
     try {
       await db.stockOut({
         materialId: parseInt(selectedMaterialId),
         quantity,
         date: new Date().toISOString().split('T')[0],
-        receiver,
+        receiver: selectedUser?.fullName || '',
         department,
         reason,
         exporter
@@ -49,9 +52,10 @@ const StockOut: React.FC<StockOutProps> = ({ user }) => {
       setTimeout(() => {
         setSuccess(false);
         setQuantity(0);
-        setReceiver('');
+        setReceiverId('');
         setReason('');
         setDepartment('');
+        setMaterialSearch('');
       }, 3000);
     } catch (err: any) {
       setError(err.message || 'Lỗi xuất kho');
@@ -60,6 +64,14 @@ const StockOut: React.FC<StockOutProps> = ({ user }) => {
 
   const selectedMat = materials.find(m => m.id === parseInt(selectedMaterialId));
   const isAvailable = selectedMat ? selectedMat.currentStock >= quantity : false;
+
+  // Lọc vật tư theo từ khóa tìm kiếm
+  const filteredMaterials = materials.filter(m => {
+    if (!materialSearch) return true;
+    const search = materialSearch.toLowerCase();
+    return m.name.toLowerCase().includes(search) || 
+           m.code.toLowerCase().includes(search);
+  });
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -79,14 +91,25 @@ const StockOut: React.FC<StockOutProps> = ({ user }) => {
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Chọn Vật Tư / Thiết Bị</label>
+              {/* Ô tìm kiếm */}
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm theo tên hoặc mã vật tư..."
+                  className="w-full border border-slate-300 rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  value={materialSearch}
+                  onChange={e => setMaterialSearch(e.target.value)}
+                />
+              </div>
               <select 
                 required
                 className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white font-mono text-sm"
                 value={selectedMaterialId}
                 onChange={e => setSelectedMaterialId(e.target.value)}
               >
-                <option value="">-- Chọn vật tư --</option>
-                {materials.map(m => (
+                <option value="">-- Chọn vật tư ({filteredMaterials.length} kết quả) --</option>
+                {filteredMaterials.map(m => (
                   <option key={m.id} value={m.id} disabled={m.currentStock === 0}>
                     [{m.code}] {m.name} -- Tồn: {m.currentStock} {m.unit} {m.currentStock === 0 ? '(Hết hàng)' : ''}
                   </option>
@@ -119,9 +142,18 @@ const StockOut: React.FC<StockOutProps> = ({ user }) => {
 
             <div className="grid grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Người nhận (Kỹ thuật/Vận hành)</label>
-                    <input required type="text" className="w-full border border-slate-300 rounded-lg px-4 py-3" 
-                        value={receiver} onChange={e => setReceiver(e.target.value)} placeholder="Tên người nhận" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Người nhận</label>
+                    <select 
+                        required
+                        className="w-full border border-slate-300 rounded-lg px-3 py-3 bg-white"
+                        value={receiverId}
+                        onChange={e => setReceiverId(e.target.value)}
+                    >
+                        <option value="">-- Chọn người nhận --</option>
+                        {users.map(u => (
+                            <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>
+                        ))}
+                    </select>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Người xuất (Thủ kho)</label>
@@ -171,7 +203,7 @@ const StockOut: React.FC<StockOutProps> = ({ user }) => {
               ) : (
                 <button 
                   type="submit" 
-                  disabled={!selectedMaterialId || quantity <= 0 || !isAvailable}
+                  disabled={!selectedMaterialId || quantity <= 0 || !isAvailable || !receiverId}
                   className="w-full bg-orange-600 text-white py-3 rounded-lg font-medium hover:bg-orange-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send size={20} />
