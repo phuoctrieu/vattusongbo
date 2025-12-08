@@ -226,9 +226,28 @@ router.post('/materials', async (req, res) => {
       };
       const prefix = prefixMap[type] || 'VT';
       
-      // Đếm số vật tư cùng loại để tạo số thứ tự
-      const count = await Material.count({ where: { type } });
-      code = `${prefix}-${String(count + 1).padStart(4, '0')}`;
+      // Tìm mã cao nhất hiện có để tránh trùng
+      const { Op } = require('sequelize');
+      const lastMaterial = await Material.findOne({
+        where: { code: { [Op.like]: `${prefix}-%` } },
+        order: [['code', 'DESC']]
+      });
+      
+      let nextNum = 1;
+      if (lastMaterial) {
+        // Trích xuất số từ mã cuối cùng
+        const match = lastMaterial.code.match(/(\d+)$/);
+        if (match) {
+          nextNum = parseInt(match[1]) + 1;
+        }
+      }
+      code = `${prefix}-${String(nextNum).padStart(4, '0')}`;
+      
+      // Kiểm tra nếu vẫn trùng thì tăng tiếp
+      while (await Material.findOne({ where: { code } })) {
+        nextNum++;
+        code = `${prefix}-${String(nextNum).padStart(4, '0')}`;
+      }
     }
     
     const material = await Material.create({
@@ -237,7 +256,15 @@ router.post('/materials', async (req, res) => {
     await createLog('CREATE', `Tạo vật tư: ${material.name} (${code})`, 'system');
     res.json(material);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error creating material:', error);
+    // Xử lý lỗi cụ thể hơn
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      res.status(400).json({ error: 'Mã vật tư đã tồn tại. Vui lòng thử lại.' });
+    } else if (error.name === 'SequelizeForeignKeyConstraintError') {
+      res.status(400).json({ error: 'Nhà cung cấp hoặc Kho không hợp lệ.' });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
