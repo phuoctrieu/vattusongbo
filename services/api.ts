@@ -81,4 +81,12 @@ export const api = {
   addMaintenanceSchedule: (data: any) => request('/maintenance/schedules', { method: 'POST', body: JSON.stringify(data) }),
   deleteMaintenanceSchedule: (id: number) => request(`/maintenance/schedules/${id}`, { method: 'DELETE' }),
   completeMaintenance: (scheduleId: number, logData: any) => request(`/maintenance/schedules/${scheduleId}/complete`, { method: 'POST', body: JSON.stringify(logData) }),
+
+  // Proposals (Đề xuất mua vật tư)
+  getProposals: () => request('/proposals'),
+  createProposal: (data: any) => request('/proposals', { method: 'POST', body: JSON.stringify(data) }),
+  approveProposal: (id: number, approverId: number) => request(`/proposals/${id}/approve`, { method: 'POST', body: JSON.stringify({ approverId }) }),
+  rejectProposal: (id: number, approverId: number, rejectReason: string) => request(`/proposals/${id}/reject`, { method: 'POST', body: JSON.stringify({ approverId, rejectReason }) }),
+  markProposalPurchased: (id: number) => request(`/proposals/${id}/mark-purchased`, { method: 'POST' }),
+  deleteProposal: (id: number) => request(`/proposals/${id}`, { method: 'DELETE' }),
 };

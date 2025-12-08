@@ -14,12 +14,13 @@ import Reports from './pages/Reports';
 import Suppliers from './pages/Suppliers';
 import StockCheck from './pages/StockCheck';
 import Maintenance from './pages/Maintenance';
+import Proposals from './pages/Proposals';
 import { UserRole } from './types';
 
 function App() {
-  const [user, setUser] = useState<{ fullName: string; role: UserRole } | null>(null);
+  const [user, setUser] = useState<{ id: number; fullName: string; role: UserRole } | null>(null);
 
-  const handleLogin = (username: string, role: UserRole) => {
+  const handleLogin = (username: string, role: UserRole, id?: number) => {
     // In a real app, we get full user object from login API
     // Here we simulate it based on username if not already passed fully
     const fullName = username === 'admin' ? 'Administrator' 
@@ -27,7 +28,7 @@ function App() {
                    : username === 'giamdoc' ? 'Lê Giám Đốc'
                    : username === 'staff' ? 'Trần Văn Nhân Viên'
                    : 'Nhân viên';
-    setUser({ fullName, role });
+    setUser({ id: id || 1, fullName, role });
   };
 
   const handleLogout = () => {
@@ -62,6 +63,7 @@ function App() {
             )}
 
             <Route path="/borrow" element={<BorrowReturn user={user} />} />
+            <Route path="/proposals" element={<Proposals user={user} />} />
             
             {(user.role === UserRole.ADMIN || user.role === UserRole.DIRECTOR || user.role === UserRole.KEEPER) && (
                  <Route path="/reports" element={<Reports />} />

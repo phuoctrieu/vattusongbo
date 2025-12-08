@@ -1,5 +1,5 @@
 
-import { Material, MaterialType, StockIn, StockOut, BorrowRecord, UserRole, User, Warehouse, SystemLog, Supplier, InventoryCheck, ToolCondition, MaintenanceSchedule, MaintenanceLog, MaintenanceType, MaintenanceFrequency } from '../types';
+import { Material, MaterialType, StockIn, StockOut, BorrowRecord, UserRole, User, Warehouse, SystemLog, Supplier, InventoryCheck, ToolCondition, MaintenanceSchedule, MaintenanceLog, MaintenanceType, MaintenanceFrequency, Proposal, ProposalItem, ProposalStatus, ProposalPriority } from '../types';
 import { api } from './api';
 
 // --- INITIAL DATA (MOCK) ---
@@ -19,6 +19,9 @@ let INVENTORY_CHECKS: InventoryCheck[] = [];
 // --- NEW MAINTENANCE DATA ---
 let MAINTENANCE_SCHEDULES: MaintenanceSchedule[] = [];
 let MAINTENANCE_LOGS: MaintenanceLog[] = [];
+
+// --- PROPOSALS DATA ---
+let PROPOSALS: Proposal[] = [];
 
 // Keep only ONE admin user for initial login
 let USERS: User[] = [
@@ -224,6 +227,90 @@ const mockDb = {
 
           // If it was ONCE, maybe we delete it or mark inactive? For now we just clear next date.
       }
+      return true;
+  },
+
+  // --- PROPOSALS METHODS ---
+  getProposals: async () => { await delay(300); return [...PROPOSALS]; },
+  
+  createProposal: async (data: any) => {
+      await delay(500);
+      const year = new Date().getFullYear();
+      const code = `DX-${year}-${String(PROPOSALS.length + 1).padStart(4, '0')}`;
+      const newId = PROPOSALS.length > 0 ? Math.max(...PROPOSALS.map(p => p.id)) + 1 : 1;
+      
+      const requester = USERS.find(u => u.id === data.requesterId);
+      const proposal: Proposal = {
+          id: newId,
+          code,
+          requesterId: data.requesterId,
+          requesterName: requester?.fullName,
+          department: data.department,
+          createdAt: new Date().toISOString(),
+          priority: data.priority || ProposalPriority.NORMAL,
+          status: ProposalStatus.PENDING,
+          reason: data.reason,
+          note: data.note,
+          items: data.items.map((item: any, idx: number) => ({ ...item, id: idx + 1, proposalId: newId }))
+      };
+      
+      PROPOSALS.push(proposal);
+      logAction('PROPOSAL', `Tạo đề xuất: ${code}`, requester?.fullName || 'system');
+      return proposal;
+  },
+
+  approveProposal: async (id: number, approverId: number) => {
+      await delay(400);
+      const idx = PROPOSALS.findIndex(p => p.id === id);
+      if (idx === -1) throw new Error('Không tìm thấy đề xuất');
+      
+      const approver = USERS.find(u => u.id === approverId);
+      PROPOSALS[idx] = {
+          ...PROPOSALS[idx],
+          status: ProposalStatus.APPROVED,
+          approverId,
+          approverName: approver?.fullName,
+          approvedAt: new Date().toISOString()
+      };
+      
+      logAction('PROPOSAL', `Duyệt đề xuất: ${PROPOSALS[idx].code}`, approver?.fullName || 'system');
+      return PROPOSALS[idx];
+  },
+
+  rejectProposal: async (id: number, approverId: number, rejectReason: string) => {
+      await delay(400);
+      const idx = PROPOSALS.findIndex(p => p.id === id);
+      if (idx === -1) throw new Error('Không tìm thấy đề xuất');
+      
+      const approver = USERS.find(u => u.id === approverId);
+      PROPOSALS[idx] = {
+          ...PROPOSALS[idx],
+          status: ProposalStatus.REJECTED,
+          approverId,
+          approverName: approver?.fullName,
+          approvedAt: new Date().toISOString(),
+          rejectReason
+      };
+      
+      logAction('PROPOSAL', `Từ chối đề xuất: ${PROPOSALS[idx].code} - ${rejectReason}`, approver?.fullName || 'system');
+      return PROPOSALS[idx];
+  },
+
+  markProposalPurchased: async (id: number) => {
+      await delay(300);
+      const idx = PROPOSALS.findIndex(p => p.id === id);
+      if (idx === -1) throw new Error('Không tìm thấy đề xuất');
+      
+      PROPOSALS[idx].status = ProposalStatus.PURCHASED;
+      logAction('PROPOSAL', `Hoàn thành mua: ${PROPOSALS[idx].code}`, 'system');
+      return PROPOSALS[idx];
+  },
+
+  deleteProposal: async (id: number) => {
+      await delay(300);
+      const proposal = PROPOSALS.find(p => p.id === id);
+      PROPOSALS = PROPOSALS.filter(p => p.id !== id);
+      if (proposal) logAction('PROPOSAL', `Xóa đề xuất: ${proposal.code}`, 'system');
       return true;
   }
 };

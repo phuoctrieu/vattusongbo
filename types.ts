@@ -178,11 +178,71 @@ export interface InventoryCheck {
 
 export interface SystemLog {
   id: number;
-  action: 'IMPORT' | 'EXPORT' | 'BORROW' | 'RETURN' | 'UPDATE' | 'DELETE' | 'CREATE' | 'ADJUST' | 'MAINTENANCE';
+  action: 'IMPORT' | 'EXPORT' | 'BORROW' | 'RETURN' | 'UPDATE' | 'DELETE' | 'CREATE' | 'ADJUST' | 'MAINTENANCE' | 'PROPOSAL';
   description: string;
   user: string;
   timestamp: string;
 }
+
+// --- PROPOSAL (Đề xuất mua vật tư) ---
+export enum ProposalStatus {
+  PENDING = 'PENDING',     // Chờ duyệt
+  APPROVED = 'APPROVED',   // Đã duyệt
+  REJECTED = 'REJECTED',   // Từ chối
+  PURCHASED = 'PURCHASED'  // Đã mua
+}
+
+export enum ProposalPriority {
+  LOW = 'LOW',       // Thấp
+  NORMAL = 'NORMAL', // Bình thường
+  HIGH = 'HIGH',     // Cao
+  URGENT = 'URGENT'  // Khẩn cấp
+}
+
+export interface ProposalItem {
+  id?: number;
+  proposalId?: number;
+  name: string;           // Tên vật tư/dụng cụ
+  type: MaterialType;     // Loại
+  unit: string;           // Đơn vị tính
+  quantity: number;       // Số lượng đề xuất
+  estimatedPrice?: number;// Giá dự kiến
+  reason: string;         // Lý do cần mua
+  note?: string;          // Ghi chú thêm
+}
+
+export interface Proposal {
+  id: number;
+  code: string;           // Mã đề xuất: DX-YYYY-XXXX
+  requesterId: number;    // Người đề xuất
+  requesterName?: string; // Helper
+  department: string;     // Bộ phận/Phòng ban
+  createdAt: string;      // Ngày tạo
+  priority: ProposalPriority;
+  status: ProposalStatus;
+  reason: string;         // Lý do chung
+  note?: string;
+  items: ProposalItem[];
+  // Thông tin duyệt
+  approverId?: number;
+  approverName?: string;
+  approvedAt?: string;
+  rejectReason?: string;
+}
+
+export const PROPOSAL_STATUS_LABELS: Record<ProposalStatus, string> = {
+  [ProposalStatus.PENDING]: 'Chờ duyệt',
+  [ProposalStatus.APPROVED]: 'Đã duyệt',
+  [ProposalStatus.REJECTED]: 'Từ chối',
+  [ProposalStatus.PURCHASED]: 'Đã mua'
+};
+
+export const PROPOSAL_PRIORITY_LABELS: Record<ProposalPriority, string> = {
+  [ProposalPriority.LOW]: 'Thấp',
+  [ProposalPriority.NORMAL]: 'Bình thường',
+  [ProposalPriority.HIGH]: 'Cao',
+  [ProposalPriority.URGENT]: 'Khẩn cấp'
+};
 
 export const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
   // Vật tư chung

@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, Wrench, LogOut, 
   User as UserIcon, Users, Warehouse as WarehouseIcon, FileText, Zap, Truck, 
-  ClipboardCheck, Activity, Menu, X, ChevronRight
+  ClipboardCheck, Activity, Menu, X, ChevronRight, FileEdit
 } from 'lucide-react';
 import { UserRole } from '../types';
 
@@ -47,6 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     { label: 'Nhập kho', path: '/stock-in', icon: ArrowDownToLine, roles: [UserRole.ADMIN, UserRole.KEEPER] },
     { label: 'Xuất kho', path: '/stock-out', icon: ArrowUpFromLine, roles: [UserRole.ADMIN, UserRole.KEEPER] },
     { label: 'Mượn/Trả dụng cụ', path: '/borrow', icon: Wrench, roles: [UserRole.ADMIN, UserRole.KEEPER, UserRole.STAFF, UserRole.DIRECTOR] },
+    { label: 'Đề xuất vật tư', path: '/proposals', icon: FileEdit, roles: [UserRole.ADMIN, UserRole.KEEPER, UserRole.STAFF, UserRole.DIRECTOR] },
     { label: 'Bảo trì & Kiểm tra', path: '/maintenance', icon: Activity, roles: [UserRole.ADMIN, UserRole.KEEPER, UserRole.DIRECTOR] },
     { label: 'Kiểm kê kho', path: '/stock-check', icon: ClipboardCheck, roles: [UserRole.ADMIN, UserRole.KEEPER, UserRole.DIRECTOR] },
     { label: 'Quản lý kho bãi', path: '/warehouses', icon: WarehouseIcon, roles: [UserRole.ADMIN, UserRole.KEEPER] },

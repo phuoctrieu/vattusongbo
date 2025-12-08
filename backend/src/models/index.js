@@ -133,11 +133,39 @@ const MaintenanceLog = sequelize.define('MaintenanceLog', {
 
 const SystemLog = sequelize.define('SystemLog', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  action: { type: DataTypes.STRING(20) }, // IMPORT, EXPORT, BORROW, RETURN, UPDATE, DELETE, CREATE, ADJUST, MAINTENANCE
+  action: { type: DataTypes.STRING(20) }, // IMPORT, EXPORT, BORROW, RETURN, UPDATE, DELETE, CREATE, ADJUST, MAINTENANCE, PROPOSAL
   description: { type: DataTypes.TEXT },
   user: { type: DataTypes.STRING(100) },
   timestamp: { type: DataTypes.STRING(30) }
 }, { tableName: 'songbo_system_logs', timestamps: false });
+
+// ============= PROPOSAL (Đề xuất mua vật tư) =============
+const Proposal = sequelize.define('Proposal', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  code: { type: DataTypes.STRING(20), unique: true, allowNull: false },
+  requesterId: { type: DataTypes.INTEGER, field: 'requester_id' },
+  department: { type: DataTypes.STRING(100) },
+  createdAt: { type: DataTypes.STRING(30), field: 'created_at' },
+  priority: { type: DataTypes.STRING(20), defaultValue: 'NORMAL' }, // LOW, NORMAL, HIGH, URGENT
+  status: { type: DataTypes.STRING(20), defaultValue: 'PENDING' }, // PENDING, APPROVED, REJECTED, PURCHASED
+  reason: { type: DataTypes.TEXT },
+  note: { type: DataTypes.TEXT },
+  approverId: { type: DataTypes.INTEGER, field: 'approver_id' },
+  approvedAt: { type: DataTypes.STRING(30), field: 'approved_at' },
+  rejectReason: { type: DataTypes.TEXT, field: 'reject_reason' }
+}, { tableName: 'songbo_proposals', timestamps: false });
+
+const ProposalItem = sequelize.define('ProposalItem', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  proposalId: { type: DataTypes.INTEGER, field: 'proposal_id' },
+  name: { type: DataTypes.STRING(200), allowNull: false },
+  type: { type: DataTypes.STRING(30) },
+  unit: { type: DataTypes.STRING(20) },
+  quantity: { type: DataTypes.INTEGER },
+  estimatedPrice: { type: DataTypes.FLOAT, field: 'estimated_price' },
+  reason: { type: DataTypes.TEXT },
+  note: { type: DataTypes.TEXT }
+}, { tableName: 'songbo_proposal_items', timestamps: false });
 
 // ============= ASSOCIATIONS =============
 Material.belongsTo(Warehouse, { foreignKey: 'warehouseId', as: 'warehouse' });
@@ -159,6 +187,11 @@ InventoryCheck.hasMany(InventoryCheckItem, { foreignKey: 'checkId', as: 'items' 
 MaintenanceSchedule.belongsTo(Material, { foreignKey: 'materialId', as: 'material' });
 MaintenanceLog.belongsTo(MaintenanceSchedule, { foreignKey: 'scheduleId', as: 'schedule' });
 
+Proposal.belongsTo(User, { foreignKey: 'requesterId', as: 'requester' });
+Proposal.belongsTo(User, { foreignKey: 'approverId', as: 'approver' });
+Proposal.hasMany(ProposalItem, { foreignKey: 'proposalId', as: 'items' });
+ProposalItem.belongsTo(Proposal, { foreignKey: 'proposalId', as: 'proposal' });
+
 module.exports = {
   sequelize,
   User,
@@ -172,5 +205,7 @@ module.exports = {
   InventoryCheckItem,
   MaintenanceSchedule,
   MaintenanceLog,
-  SystemLog
+  SystemLog,
+  Proposal,
+  ProposalItem
 };

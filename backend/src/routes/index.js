@@ -5,7 +5,8 @@ const jwt = require('jsonwebtoken');
 const {
   User, Warehouse, Supplier, Material, StockIn, StockOut,
   BorrowRecord, InventoryCheck, InventoryCheckItem,
-  MaintenanceSchedule, MaintenanceLog, SystemLog
+  MaintenanceSchedule, MaintenanceLog, SystemLog,
+  Proposal, ProposalItem
 } = require('../models');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
@@ -534,6 +535,175 @@ router.get('/maintenance/logs', async (req, res) => {
       ...l.toJSON(),
       materialName: l.schedule?.material?.name
     })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============= PROPOSALS (Đề xuất mua vật tư) =============
+router.get('/proposals', async (req, res) => {
+  try {
+    const proposals = await Proposal.findAll({
+      include: [
+        { model: User, as: 'requester', attributes: ['id', 'fullName'] },
+        { model: User, as: 'approver', attributes: ['id', 'fullName'] },
+        { model: ProposalItem, as: 'items' }
+      ],
+      order: [['id', 'DESC']]
+    });
+    
+    const result = proposals.map(p => ({
+      ...p.toJSON(),
+      requesterName: p.requester?.fullName,
+      approverName: p.approver?.fullName
+    }));
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/proposals', async (req, res) => {
+  try {
+    const { requesterId, department, priority, reason, note, items } = req.body;
+    
+    // Tạo mã đề xuất: DX-YYYY-XXXX
+    const year = new Date().getFullYear();
+    const count = await Proposal.count();
+    const code = `DX-${year}-${String(count + 1).padStart(4, '0')}`;
+    
+    const proposal = await Proposal.create({
+      code,
+      requesterId,
+      department,
+      priority: priority || 'NORMAL',
+      status: 'PENDING',
+      reason,
+      note,
+      createdAt: new Date().toISOString()
+    });
+    
+    // Tạo các items
+    if (items && items.length > 0) {
+      for (const item of items) {
+        await ProposalItem.create({
+          proposalId: proposal.id,
+          name: item.name,
+          type: item.type,
+          unit: item.unit,
+          quantity: item.quantity,
+          estimatedPrice: item.estimatedPrice,
+          reason: item.reason,
+          note: item.note
+        });
+      }
+    }
+    
+    const requester = await User.findByPk(requesterId);
+    await createLog('PROPOSAL', `Tạo đề xuất: ${code} - ${reason}`, requester?.fullName || 'system');
+    
+    // Lấy proposal đầy đủ
+    const fullProposal = await Proposal.findByPk(proposal.id, {
+      include: [
+        { model: User, as: 'requester', attributes: ['id', 'fullName'] },
+        { model: ProposalItem, as: 'items' }
+      ]
+    });
+    
+    res.json({
+      ...fullProposal.toJSON(),
+      requesterName: fullProposal.requester?.fullName
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Duyệt đề xuất
+router.post('/proposals/:id/approve', async (req, res) => {
+  try {
+    const { approverId } = req.body;
+    const proposal = await Proposal.findByPk(req.params.id, {
+      include: [{ model: User, as: 'requester' }]
+    });
+    
+    if (!proposal) return res.status(404).json({ error: 'Không tìm thấy đề xuất' });
+    if (proposal.status !== 'PENDING') return res.status(400).json({ error: 'Đề xuất đã được xử lý' });
+    
+    proposal.status = 'APPROVED';
+    proposal.approverId = approverId;
+    proposal.approvedAt = new Date().toISOString();
+    await proposal.save();
+    
+    const approver = await User.findByPk(approverId);
+    await createLog('PROPOSAL', `Duyệt đề xuất: ${proposal.code}`, approver?.fullName || 'system');
+    
+    res.json({ ...proposal.toJSON(), approverName: approver?.fullName });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Từ chối đề xuất
+router.post('/proposals/:id/reject', async (req, res) => {
+  try {
+    const { approverId, rejectReason } = req.body;
+    const proposal = await Proposal.findByPk(req.params.id);
+    
+    if (!proposal) return res.status(404).json({ error: 'Không tìm thấy đề xuất' });
+    if (proposal.status !== 'PENDING') return res.status(400).json({ error: 'Đề xuất đã được xử lý' });
+    
+    proposal.status = 'REJECTED';
+    proposal.approverId = approverId;
+    proposal.approvedAt = new Date().toISOString();
+    proposal.rejectReason = rejectReason;
+    await proposal.save();
+    
+    const approver = await User.findByPk(approverId);
+    await createLog('PROPOSAL', `Từ chối đề xuất: ${proposal.code} - ${rejectReason}`, approver?.fullName || 'system');
+    
+    res.json(proposal);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Đánh dấu đã mua
+router.post('/proposals/:id/mark-purchased', async (req, res) => {
+  try {
+    const proposal = await Proposal.findByPk(req.params.id);
+    
+    if (!proposal) return res.status(404).json({ error: 'Không tìm thấy đề xuất' });
+    if (proposal.status !== 'APPROVED') return res.status(400).json({ error: 'Chỉ có thể đánh dấu đã mua cho đề xuất đã duyệt' });
+    
+    proposal.status = 'PURCHASED';
+    await proposal.save();
+    
+    await createLog('PROPOSAL', `Hoàn thành mua: ${proposal.code}`, 'system');
+    
+    res.json(proposal);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Xóa đề xuất (chỉ khi PENDING hoặc REJECTED)
+router.delete('/proposals/:id', async (req, res) => {
+  try {
+    const proposal = await Proposal.findByPk(req.params.id);
+    if (!proposal) return res.status(404).json({ error: 'Không tìm thấy đề xuất' });
+    if (proposal.status === 'APPROVED' || proposal.status === 'PURCHASED') {
+      return res.status(400).json({ error: 'Không thể xóa đề xuất đã duyệt hoặc đã mua' });
+    }
+    
+    // Xóa items trước
+    await ProposalItem.destroy({ where: { proposalId: proposal.id } });
+    await proposal.destroy();
+    
+    await createLog('PROPOSAL', `Xóa đề xuất: ${proposal.code}`, 'system');
+    
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

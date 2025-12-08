@@ -4,7 +4,7 @@ import { db } from '../services/mockDb';
 import { Zap } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: (username: string, role: UserRole) => void;
+  onLogin: (username: string, role: UserRole, id?: number) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -21,7 +21,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     try {
         const user = await db.login(username, password);
         if (user) {
-            onLogin(user.username, user.role);
+            onLogin(user.username, user.role, user.id);
         } else {
             setError('Tài khoản hoặc mật khẩu không đúng');
         }
