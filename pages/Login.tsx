@@ -33,16 +33,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-8">
-        <div className="text-center mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="flex justify-center mb-4">
-              <div className="p-3 bg-yellow-100 rounded-full text-yellow-600">
-                  <Zap size={32} fill="currentColor" />
+              <div className="p-4 bg-yellow-100 rounded-full text-yellow-600">
+                  <Zap size={36} fill="currentColor" />
               </div>
           </div>
-          <h1 className="text-3xl font-bold text-slate-800">NMTĐ Sông Bồ</h1>
-          <p className="text-slate-500 mt-2">Hệ thống quản lý vật tư & thiết bị</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">NMTĐ Sông Bồ</h1>
+          <p className="text-slate-500 mt-2 text-sm sm:text-base">Hệ thống quản lý vật tư & thiết bị</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
