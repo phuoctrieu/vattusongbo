@@ -451,17 +451,66 @@ router.post('/maintenance/schedules/:id/complete', async (req, res) => {
     const schedule = await MaintenanceSchedule.findByPk(req.params.id);
     if (!schedule) return res.status(404).json({ error: 'Không tìm thấy lịch bảo dưỡng' });
 
-    const { date, performer, result, cost, nextScheduledDate } = req.body;
-    const log = await MaintenanceLog.create({ scheduleId: schedule.id, date, performer, result, cost, nextScheduledDate });
+    const { date, performer, result, cost } = req.body;
+    
+    // Tự động tính ngày bảo trì tiếp theo dựa trên tần suất
+    const completionDate = new Date(date);
+    let nextDate = new Date(completionDate);
+    
+    switch (schedule.frequency) {
+      case 'WEEKLY':
+        nextDate.setDate(nextDate.getDate() + 7);
+        break;
+      case 'MONTHLY':
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        break;
+      case 'QUARTERLY':
+        nextDate.setMonth(nextDate.getMonth() + 3);
+        break;
+      case 'YEARLY':
+        nextDate.setFullYear(nextDate.getFullYear() + 1);
+        break;
+      case 'ONCE':
+        // Nếu là một lần, không có lịch tiếp theo - có thể xóa schedule
+        nextDate = null;
+        break;
+    }
+    
+    const nextScheduledDate = nextDate ? nextDate.toISOString().split('T')[0] : null;
+    
+    // Tạo log ghi nhận việc hoàn thành
+    const log = await MaintenanceLog.create({ 
+      scheduleId: schedule.id, 
+      date, 
+      performer, 
+      result, 
+      cost,
+      nextScheduledDate 
+    });
 
+    // Cập nhật schedule
     schedule.lastMaintenanceDate = date;
-    if (nextScheduledDate) schedule.nextMaintenanceDate = nextScheduledDate;
+    if (nextScheduledDate) {
+      schedule.nextMaintenanceDate = nextScheduledDate;
+    }
     await schedule.save();
+    
+    // Nếu là công việc một lần (ONCE), xóa schedule sau khi hoàn thành
+    if (schedule.frequency === 'ONCE') {
+      await schedule.destroy();
+    }
 
     const material = await Material.findByPk(schedule.materialId);
-    await createLog('MAINTENANCE', `Hoàn thành bảo dưỡng: ${material?.name}`, performer);
+    await createLog('MAINTENANCE', `Hoàn thành bảo dưỡng: ${material?.name} - ${result}`, performer);
 
-    res.json({ ...log.toJSON(), materialName: material?.name });
+    res.json({ 
+      ...log.toJSON(), 
+      materialName: material?.name,
+      nextMaintenanceDate: nextScheduledDate,
+      message: schedule.frequency === 'ONCE' 
+        ? 'Đã hoàn thành và xóa lịch (công việc một lần)' 
+        : `Đã hoàn thành. Lịch tiếp theo: ${nextScheduledDate}`
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
